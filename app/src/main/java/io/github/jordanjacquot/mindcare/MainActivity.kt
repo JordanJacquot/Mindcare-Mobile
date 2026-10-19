@@ -7,7 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.jordanjacquot.mindcare.ui.Accueil
+import io.github.jordanjacquot.mindcare.ui.MindcareNavigation
 import io.github.jordanjacquot.mindcare.ui.theme.FondMindcare
 import io.github.jordanjacquot.mindcare.ui.theme.MindcareTheme
 
@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val theme by app.theme.collectAsStateWithLifecycle()
             MindcareTheme(theme) {
-                FondMindcare { Accueil(theme, app::choisirTheme) }
+                FondMindcare { MindcareNavigation(theme, app::choisirTheme) }
             }
         }
     }

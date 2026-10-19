@@ -2,6 +2,7 @@ package io.github.jordanjacquot.mindcare
 
 import android.app.Application
 import io.github.jordanjacquot.mindcare.maj.MiseAJour
+import io.github.jordanjacquot.mindcare.moteur.Catalogue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -17,6 +18,9 @@ class MindcareApp : Application() {
 
     /** Les mises à jour de Mindcare (le bandeau de l'accueil). */
     val maj: MiseAJour by lazy { MiseAJour(this, portee) }
+
+    /** Le catalogue de pannes : celui de l'appli (recopié de Mindcare PC). */
+    val catalogue: Catalogue by lazy { Catalogue.lire(assets.open("catalogue/enquetes.json").bufferedReader().use { it.readText() }) }
 
     /** Le thème choisi : neon, crepuscule, terminal, arcade ou rubis (les 5 de la suite). */
     private val _theme by lazy { MutableStateFlow(getSharedPreferences("apparence", MODE_PRIVATE).getString("theme", "neon") ?: "neon") }
