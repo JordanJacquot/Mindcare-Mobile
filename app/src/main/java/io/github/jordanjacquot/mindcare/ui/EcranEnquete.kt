@@ -91,18 +91,19 @@ fun EcranEnquete(
         Column(Modifier.padding(horizontal = 16.dp)) {
             Etiquette("Étape $n sur $total", c.discret)
             LinearProgressIndicator(progress = { n.toFloat() / total }, color = c.p, trackColor = Color.White.copy(alpha = 0.12f),
-                modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 8.dp))
-            BandeauSuspects(catalogue, panne, et, suspectsOuverts, { suspectsOuverts = !suspectsOuverts }, changerReponse)
+                drawStopIndicator = {}, modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 2.dp))
         }
 
         Column(
-            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
+            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            BandeauSuspects(catalogue, panne, et, suspectsOuverts, { suspectsOuverts = !suspectsOuverts }, changerReponse)
+            Spacer(Modifier.height(4.dp))
             val restants = e.restants.count { catalogue.suspect(it)?.vrai("Urgent") != true }
             val duree = etape.texte("Duree")
             Etiquette(
-                when { test -> "Une manipulation à faire" + (if (duree.isNotEmpty()) " ($duree)" else ""); restants > 1 -> "Il reste $restants suspects"; else -> "Une dernière vérification" },
+                when { test -> "Une manipulation à faire" + (if (duree.isNotEmpty()) " ($duree)" else ""); restants > 1 -> "Une question"; else -> "Une dernière vérification" },
                 if (test) c.t else c.p,
             )
             Text(etape.texte("Texte"), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = Color.White)
