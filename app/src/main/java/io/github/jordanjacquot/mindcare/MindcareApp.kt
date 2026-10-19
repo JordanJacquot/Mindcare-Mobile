@@ -3,7 +3,6 @@ package io.github.jordanjacquot.mindcare
 import android.app.Application
 import io.github.jordanjacquot.mindcare.donnees.Historique
 import io.github.jordanjacquot.mindcare.maj.MiseAJour
-import io.github.jordanjacquot.mindcare.moteur.Catalogue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -20,8 +19,8 @@ class MindcareApp : Application() {
     /** Les mises à jour de Mindcare (le bandeau de l'accueil). */
     val maj: MiseAJour by lazy { MiseAJour(this, portee) }
 
-    /** Le catalogue de pannes : celui de l'appli (recopié de Mindcare PC). */
-    val catalogue: Catalogue by lazy { Catalogue.lire(assets.open("catalogue/enquetes.json").bufferedReader().use { it.readText() }) }
+    /** Le catalogue de pannes : celui de l'appli, ou le dernier publié avec Mindcare PC (maj/MajCatalogue.kt). */
+    val majCatalogue: io.github.jordanjacquot.mindcare.maj.MajCatalogue by lazy { io.github.jordanjacquot.mindcare.maj.MajCatalogue(this, portee) }
 
     /** Les 10 dernières enquêtes (diagnostics.json, sur le téléphone). */
     val historique: Historique by lazy { Historique(java.io.File(filesDir, "diagnostics.json")) }
@@ -38,5 +37,7 @@ class MindcareApp : Application() {
         super.onCreate()
         // Une nouvelle version ? (au plus une fois par jour, sans gêner le lancement)
         portee.launch { delay(5_000); maj.verifierSiBesoin() }
+        // Un nouveau catalogue de pannes, publié avec Mindcare PC ? (au plus toutes les 6 heures)
+        portee.launch { delay(2_000); majCatalogue.verifierSiBesoin() }
     }
 }

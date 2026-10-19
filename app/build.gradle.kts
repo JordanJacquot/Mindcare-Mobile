@@ -61,6 +61,11 @@ val copierCatalogue by tasks.registering(Copy::class) {
     onlyIf { pc.resolve("enquetes.json").exists() }
     from(pc) { include("enquetes.json", "images/*.svg") }
     into(layout.projectDirectory.dir("src/main/assets/catalogue"))
+    // L'édition du catalogue : la dernière version publiée de Mindcare PC (le téléphone télécharge les plus récentes)
+    val edition = providers.exec { commandLine("git", "-C", pc.parentFile.parentFile.path, "describe", "--tags", "--abbrev=0"); isIgnoreExitValue = true }
+        .standardOutput.asText
+    val sortie = layout.projectDirectory.file("src/main/assets/catalogue/edition.txt").asFile
+    doLast { edition.get().trim().removePrefix("v").takeIf { it.isNotEmpty() }?.let { sortie.writeText(it) } }
 }
 tasks.named("preBuild") { dependsOn(copierCatalogue) }
 

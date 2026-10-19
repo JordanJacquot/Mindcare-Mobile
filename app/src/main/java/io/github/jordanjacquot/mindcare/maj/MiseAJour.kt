@@ -175,24 +175,7 @@ class MiseAJour(private val contexte: Context, private val portee: CoroutineScop
         return VersionPubliee(nom, numeros(nom), url, apk["size"]?.jsonPrimitive?.long ?: 0L, sha)
     }
 
-    /** Une connexion en HTTPS seulement, en suivant les renvois de GitHub (vers ses serveurs de fichiers). */
-    private fun ouvrir(adresse: String): HttpURLConnection {
-        var url = URL(adresse)
-        repeat(8) {
-            require(url.protocol == "https") { "lien non sécurisé refusé" }
-            val c = url.openConnection() as HttpURLConnection
-            c.instanceFollowRedirects = false
-            c.connectTimeout = 20_000
-            c.readTimeout = 30_000
-            c.setRequestProperty("User-Agent", "Mindcare-Mobile")
-            c.setRequestProperty("Accept", if (adresse.contains("api.github.com")) "application/vnd.github+json" else "*/*")
-            val code = c.responseCode
-            if (code in 300..399) { url = URL(url, c.getHeaderField("Location")); c.disconnect(); return@repeat }
-            if (code != 200) { c.disconnect(); throw java.io.IOException("réponse $code") }
-            return c
-        }
-        throw java.io.IOException("trop de renvois")
-    }
+    private fun ouvrir(adresse: String): HttpURLConnection = ouvrirHttps(adresse)
 
     private fun sha256(f: File): String {
         val md = MessageDigest.getInstance("SHA-256")
@@ -201,6 +184,25 @@ class MiseAJour(private val contexte: Context, private val portee: CoroutineScop
     }
 
     companion object {
+        /** Une connexion en HTTPS seulement, en suivant les renvois de GitHub (vers ses serveurs de fichiers). */
+        fun ouvrirHttps(adresse: String): HttpURLConnection {
+            var url = URL(adresse)
+            repeat(8) {
+                require(url.protocol == "https") { "lien non sécurisé refusé" }
+                val c = url.openConnection() as HttpURLConnection
+                c.instanceFollowRedirects = false
+                c.connectTimeout = 20_000
+                c.readTimeout = 30_000
+                c.setRequestProperty("User-Agent", "Mindcare-Mobile")
+                c.setRequestProperty("Accept", if (adresse.contains("api.github.com")) "application/vnd.github+json" else "*/*")
+                val code = c.responseCode
+                if (code in 300..399) { url = URL(url, c.getHeaderField("Location")); c.disconnect(); return@repeat }
+                if (code != 200) { c.disconnect(); throw java.io.IOException("réponse $code") }
+                return c
+            }
+            throw java.io.IOException("trop de renvois")
+        }
+
         const val Depot = "JordanJacquot/Mindcare-Mobile"
 
         /** « 0.2.1-beta » → [0, 2, 1] (le suffixe ne compte pas). */

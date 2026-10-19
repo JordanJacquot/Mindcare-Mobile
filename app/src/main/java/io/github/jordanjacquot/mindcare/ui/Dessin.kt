@@ -98,7 +98,9 @@ private fun ThemeMindcare.couleur(valeur: String?, opacite: Float): Color? {
 @Composable
 fun Dessin(nom: String, modifier: Modifier = Modifier) {
     val contexte = LocalContext.current
-    val dessin = remember(nom) { runCatching { contexte.assets.open("catalogue/images/$nom.svg").use { lireSvg(it) } }.getOrNull() } ?: return
+    val catalogue = (contexte.applicationContext as io.github.jordanjacquot.mindcare.MindcareApp).majCatalogue
+    val edition = catalogue.edition
+    val dessin = remember(nom, edition) { runCatching { catalogue.image(nom)?.use { lireSvg(it) } }.getOrNull() } ?: return
     val theme = mc.theme
     val mesureur = rememberTextMeasurer()
     Canvas(modifier) {

@@ -13,6 +13,7 @@ import io.github.jordanjacquot.mindcare.donnees.Historique
 import io.github.jordanjacquot.mindcare.moteur.enqueteTelephone
 import io.github.jordanjacquot.mindcare.moteur.titreVerdict
 import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * Les écrans et le passage de l'un à l'autre : l'accueil (« Ça concerne quoi ? », puis « Qu'est-ce qui se passe ? »,
@@ -22,7 +23,7 @@ import androidx.compose.runtime.LaunchedEffect
 @Composable
 fun MindcareNavigation(themeId: String, choisirTheme: (String) -> Unit) {
     val app = LocalContext.current.applicationContext as MindcareApp
-    val catalogue = remember { app.catalogue }
+    val catalogue by app.majCatalogue.catalogue.collectAsStateWithLifecycle()
     var famille by rememberSaveable { mutableStateOf("") }
     var panneId by rememberSaveable { mutableStateOf("") }
     var choix by rememberSaveable { mutableStateOf(listOf<Int>()) }
@@ -71,7 +72,7 @@ fun MindcareNavigation(themeId: String, choisirTheme: (String) -> Unit) {
         )
     } else {
         EcranReponse(
-            catalogue = catalogue, panne = panne, e = et.e, version = app.maj.versionActuelle,
+            catalogue = catalogue, panne = panne, e = et.e, version = "${app.maj.versionActuelle} (catalogue ${app.majCatalogue.edition})",
             changerDerniere = ::precedente,
             accueil = ::accueil,
         )
