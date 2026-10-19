@@ -160,6 +160,9 @@ fun Accueil(
             Etiquette("Thème : ${(Themes.firstOrNull { it.id == themeId } ?: Themes.first()).nom}", c.discret)
             Text(if (themesOuverts) "  ▴" else "  ▾", color = c.discret)
         }
+        val app = LocalContext.current.applicationContext as MindcareApp
+        Text("Mindcare Mobile ${app.maj.versionActuelle} · catalogue ${app.majCatalogue.edition}, le même que Mindcare sur PC",
+            style = MaterialTheme.typography.bodySmall, color = c.tresDiscret)
         if (themesOuverts) Verre(Modifier.fillMaxWidth()) {
             Themes.forEach { t ->
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { choisirTheme(t.id) }.padding(vertical = 8.dp)) {

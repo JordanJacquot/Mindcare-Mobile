@@ -27,7 +27,7 @@ Validé avec Jordan le 2026-10-19 (fiche : [CADRAGE.md](CADRAGE.md)).
 - [x] 4. Les images : les dessins des questions et les icônes des familles, dans le thème.
 - [x] 5. Les enquêtes gardées : les 10 dernières, la reprise, le rapport partagé.
 - [x] 6. Le catalogue téléchargé : publié avec Mindcare PC, vérifié par le téléphone.
-- [ ] 7. Première publication : Mindcare Mobile 0.1.0-beta.
+- [x] 7. Première publication : Mindcare Mobile 0.1.0-beta.
 
 ## Développer
 
