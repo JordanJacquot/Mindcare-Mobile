@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.jordanjacquot.mindcare.donnees.rapport
 import io.github.jordanjacquot.mindcare.moteur.Catalogue
 import io.github.jordanjacquot.mindcare.moteur.Enquete
 import io.github.jordanjacquot.mindcare.moteur.Objet
@@ -43,8 +44,9 @@ import io.github.jordanjacquot.mindcare.ui.theme.mc
  * comment on le sait, et ce qu'il faut faire.
  */
 @Composable
-fun EcranReponse(catalogue: Catalogue, panne: Objet, e: Enquete, changerDerniere: () -> Unit, accueil: () -> Unit) {
+fun EcranReponse(catalogue: Catalogue, panne: Objet, e: Enquete, version: String, changerDerniere: () -> Unit, accueil: () -> Unit) {
     val c = mc
+    val contexte = androidx.compose.ui.platform.LocalContext.current
     val v = e.verdict ?: return
     val suspect = catalogue.suspect(v.suspect)
     val urgent = suspect?.vrai("Urgent") == true
@@ -89,7 +91,7 @@ fun EcranReponse(catalogue: Catalogue, panne: Objet, e: Enquete, changerDerniere
                     Text(suspect.texte("Pro"), color = c.texte, modifier = Modifier.padding(top = 4.dp))
                 }
                 v.type == "reparateur" -> {
-                    Text("Ces pistes se départagent avec un outil de réparateur : montre-lui ce que tu as fait, il saura par où commencer.", color = c.discret, modifier = Modifier.padding(top = 6.dp))
+                    Text("Ces pistes se départagent avec un outil de réparateur : envoie-lui le rapport (« Partager le rapport »), il saura par où commencer.", color = c.discret, modifier = Modifier.padding(top = 6.dp))
                     v.restants.forEach { id ->
                         val r = catalogue.suspect(id)
                         Text(r?.texte("Titre") ?: id, fontWeight = FontWeight.SemiBold, color = Color.White, modifier = Modifier.padding(top = 12.dp))
@@ -118,6 +120,13 @@ fun EcranReponse(catalogue: Catalogue, panne: Objet, e: Enquete, changerDerniere
         Text(catalogue.securite.joinToString(" "), color = c.ambre, style = MaterialTheme.typography.bodySmall)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             BoutonAccent("Retour à l'accueil", accueil)
+            BoutonPilule("Partager le rapport", {
+                val texte = catalogue.rapport(panne, e, catalogue.titreVerdict(v), version)
+                contexte.startActivity(android.content.Intent.createChooser(
+                    android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
+                        .putExtra(android.content.Intent.EXTRA_SUBJECT, "Mindcare : ${panne.texte("Titre")}").putExtra(android.content.Intent.EXTRA_TEXT, texte),
+                    "Envoyer le rapport"))
+            })
             BoutonPilule("Changer ma dernière réponse", changerDerniere)
         }
         Spacer(Modifier.height(12.dp))

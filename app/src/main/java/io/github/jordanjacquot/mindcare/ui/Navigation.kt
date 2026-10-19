@@ -9,7 +9,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import io.github.jordanjacquot.mindcare.MindcareApp
+import io.github.jordanjacquot.mindcare.donnees.Historique
 import io.github.jordanjacquot.mindcare.moteur.enqueteTelephone
+import io.github.jordanjacquot.mindcare.moteur.titreVerdict
+import androidx.compose.runtime.LaunchedEffect
 
 /**
  * Les écrans et le passage de l'un à l'autre : l'accueil (« Ça concerne quoi ? », puis « Qu'est-ce qui se passe ? »,
@@ -23,6 +26,7 @@ fun MindcareNavigation(themeId: String, choisirTheme: (String) -> Unit) {
     var famille by rememberSaveable { mutableStateOf("") }
     var panneId by rememberSaveable { mutableStateOf("") }
     var choix by rememberSaveable { mutableStateOf(listOf<Int>()) }
+    var diagId by rememberSaveable { mutableStateOf("") }
     val panne = if (panneId.isEmpty()) null else catalogue.panne(panneId)
 
     fun accueil() { panneId = ""; choix = emptyList() }
@@ -33,7 +37,8 @@ fun MindcareNavigation(themeId: String, choisirTheme: (String) -> Unit) {
             catalogue = catalogue,
             famille = famille,
             choisirFamille = { famille = it },
-            ouvrirPanne = { id -> famille = catalogue.panne(id)?.texte("Famille") ?: famille; panneId = id; choix = emptyList() },
+            ouvrirPanne = { id -> famille = catalogue.panne(id)?.texte("Famille") ?: famille; panneId = id; choix = emptyList(); diagId = Historique.nouvelId() },
+            reprendre = { d -> famille = catalogue.panne(d.Panne)?.texte("Famille") ?: ""; panneId = d.Panne; choix = d.Choix; diagId = d.Id },
             themeId = themeId,
             choisirTheme = choisirTheme,
         )
@@ -41,6 +46,12 @@ fun MindcareNavigation(themeId: String, choisirTheme: (String) -> Unit) {
     }
 
     val et = catalogue.enqueteTelephone(panne, choix)
+    // L'enquête est gardée à chaque réponse ; une enquête finie le reste tant qu'une nouvelle réponse ne la remplace pas
+    LaunchedEffect(diagId, et.choix) {
+        val v = et.e.verdict
+        if (v != null) app.historique.enregistrer(diagId, panneId, et.choix, true, v.suspect, catalogue.titreVerdict(v))
+        else if (app.historique.trouver(diagId)?.Fini != true) app.historique.enregistrer(diagId, panneId, et.choix, false, null, "")
+    }
     // Revenir d'une étape (les réponses données par le téléphone tout seul se défont avec celle d'avant)
     fun precedente() {
         var c = et.choix
@@ -60,7 +71,7 @@ fun MindcareNavigation(themeId: String, choisirTheme: (String) -> Unit) {
         )
     } else {
         EcranReponse(
-            catalogue = catalogue, panne = panne, e = et.e,
+            catalogue = catalogue, panne = panne, e = et.e, version = app.maj.versionActuelle,
             changerDerniere = ::precedente,
             accueil = ::accueil,
         )

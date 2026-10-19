@@ -39,7 +39,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.github.jordanjacquot.mindcare.MindcareApp
+import io.github.jordanjacquot.mindcare.donnees.Diagnostic
+import io.github.jordanjacquot.mindcare.donnees.formaterDate
 import io.github.jordanjacquot.mindcare.maj.BandeauMiseAJour
+import io.github.jordanjacquot.mindcare.ui.theme.BoutonAccent
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.platform.LocalContext
 import io.github.jordanjacquot.mindcare.moteur.Catalogue
 import io.github.jordanjacquot.mindcare.moteur.Objet
 import io.github.jordanjacquot.mindcare.moteur.chercher
@@ -60,12 +66,14 @@ fun Accueil(
     famille: String,
     choisirFamille: (String) -> Unit,
     ouvrirPanne: (String) -> Unit,
+    reprendre: (Diagnostic) -> Unit,
     themeId: String,
     choisirTheme: (String) -> Unit,
 ) {
     val c = mc
     var recherche by rememberSaveable { mutableStateOf("") }
     var themesOuverts by rememberSaveable { mutableStateOf(false) }
+    val historique by (LocalContext.current.applicationContext as MindcareApp).historique.liste.collectAsStateWithLifecycle()
     Column(
         Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -79,6 +87,13 @@ fun Accueil(
             }
         }
         BandeauMiseAJour()
+        // Une enquête pas finie (un test remis à plus tard) : la reprendre est proposé tout de suite
+        historique.firstOrNull()?.takeIf { !it.Fini && catalogue.panne(it.Panne) != null }?.let { d ->
+            Verre(Modifier.fillMaxWidth(), teinte = c.p) {
+                Text("Ton enquête « ${catalogue.panne(d.Panne)!!.texte("Titre")} » n'est pas finie (commencée le ${formaterDate(d.Debut)}).", color = c.texte)
+                BoutonAccent("La reprendre", { reprendre(d) }, Modifier.padding(top = 10.dp))
+            }
+        }
         OutlinedTextField(
             value = recherche, onValueChange = { recherche = it }, singleLine = true,
             leadingIcon = { Icon(Icons.Outlined.Search, null, tint = c.p) },
@@ -123,6 +138,17 @@ fun Accueil(
                             }
                         }
                         if (ligne.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+                // Les enquêtes terminées : un appui pour revoir la réponse
+                val finies = historique.filter { it.Fini && catalogue.panne(it.Panne) != null }.take(5)
+                if (finies.isNotEmpty()) {
+                    Text("Tes enquêtes terminées", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Color.White, modifier = Modifier.padding(top = 8.dp))
+                    finies.forEach { d ->
+                        Verre(Modifier.fillMaxWidth(), onClick = { reprendre(d) }, interieur = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 10.dp)) {
+                            Text("${catalogue.panne(d.Panne)!!.texte("Titre")} : ${d.Titre.ifEmpty { "à faire vérifier" }}", color = c.texte)
+                            Text("le ${formaterDate(d.Debut)}", style = MaterialTheme.typography.bodySmall, color = c.tresDiscret, modifier = Modifier.padding(top = 2.dp))
+                        }
                     }
                 }
             }

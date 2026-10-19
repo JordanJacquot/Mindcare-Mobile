@@ -1,6 +1,7 @@
 package io.github.jordanjacquot.mindcare
 
 import android.app.Application
+import io.github.jordanjacquot.mindcare.donnees.Historique
 import io.github.jordanjacquot.mindcare.maj.MiseAJour
 import io.github.jordanjacquot.mindcare.moteur.Catalogue
 import kotlinx.coroutines.CoroutineScope
@@ -21,6 +22,9 @@ class MindcareApp : Application() {
 
     /** Le catalogue de pannes : celui de l'appli (recopié de Mindcare PC). */
     val catalogue: Catalogue by lazy { Catalogue.lire(assets.open("catalogue/enquetes.json").bufferedReader().use { it.readText() }) }
+
+    /** Les 10 dernières enquêtes (diagnostics.json, sur le téléphone). */
+    val historique: Historique by lazy { Historique(java.io.File(filesDir, "diagnostics.json")) }
 
     /** Le thème choisi : neon, crepuscule, terminal, arcade ou rubis (les 5 de la suite). */
     private val _theme by lazy { MutableStateFlow(getSharedPreferences("apparence", MODE_PRIVATE).getString("theme", "neon") ?: "neon") }

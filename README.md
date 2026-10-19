@@ -25,7 +25,7 @@ Validé avec Jordan le 2026-10-19 (fiche : [CADRAGE.md](CADRAGE.md)).
       compare le PC et le téléphone sur les 102 pannes.
 - [x] 3. Les écrans : l'accueil en questions guidées et la recherche, l'enquête pas à pas, la réponse.
 - [x] 4. Les images : les dessins des questions et les icônes des familles, dans le thème.
-- [ ] 5. Les enquêtes gardées : les 10 dernières, la reprise, le rapport partagé.
+- [x] 5. Les enquêtes gardées : les 10 dernières, la reprise, le rapport partagé.
 - [ ] 6. Le catalogue téléchargé : publié avec Mindcare PC, vérifié par le téléphone.
 - [ ] 7. Première publication : Mindcare Mobile 0.1.0-beta.
 
