@@ -117,6 +117,7 @@ fun Accueil(
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.height(IntrinsicSize.Min)) {
                         ligne.forEach { f ->
                             Verre(Modifier.weight(1f).fillMaxHeight(), onClick = { choisirFamille(f.texte("Id")) }, interieur = androidx.compose.foundation.layout.PaddingValues(14.dp)) {
+                                Dessin(f.texte("Icone"), Modifier.size(34.dp).padding(bottom = 6.dp))
                                 Text(f.texte("Titre"), fontWeight = FontWeight.SemiBold, color = Color.White)
                                 Text(f.texte("Phrase"), style = MaterialTheme.typography.bodySmall, color = c.discret, modifier = Modifier.padding(top = 3.dp))
                             }

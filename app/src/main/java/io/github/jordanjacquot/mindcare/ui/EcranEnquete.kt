@@ -106,6 +106,7 @@ fun EcranEnquete(
                 when { test -> "Une manipulation à faire" + (if (duree.isNotEmpty()) " ($duree)" else ""); restants > 1 -> "Une question"; else -> "Une dernière vérification" },
                 if (test) c.t else c.p,
             )
+            if (etape.texte("Image").isNotEmpty()) Dessin(etape.texte("Image"), Modifier.fillMaxWidth().height(170.dp).padding(vertical = 4.dp))
             Text(etape.texte("Texte"), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = Color.White)
             if (etape.texte("Aide").isNotEmpty()) Text(etape.texte("Aide"), color = c.discret)
             if (test) {
