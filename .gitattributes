@@ -2,3 +2,5 @@ gradlew text eol=lf
 *.sh text eol=lf
 *.bat text eol=crlf
 *.jar binary
+app/src/main/assets/catalogue/** -text
+app/src/test/resources/** -text
