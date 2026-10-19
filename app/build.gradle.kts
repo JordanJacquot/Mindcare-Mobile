@@ -53,6 +53,17 @@ android {
     }
 }
 
+// Le catalogue de pannes vient de Mindcare PC, la seule source (voir CLAUDE.md) : recopié à chaque construction quand
+// le dépôt Mindcare est à côté (D:\Projets\Mindcare). La copie est commitée, pour construire même sans lui.
+val pc = rootProject.file("../Mindcare/Mindcare/fichiers")
+val copierCatalogue by tasks.registering(Copy::class) {
+    description = "Recopie enquetes.json et les images depuis Mindcare PC"
+    onlyIf { pc.resolve("enquetes.json").exists() }
+    from(pc) { include("enquetes.json", "images/*.svg") }
+    into(layout.projectDirectory.dir("src/main/assets/catalogue"))
+}
+tasks.named("preBuild") { dependsOn(copierCatalogue) }
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

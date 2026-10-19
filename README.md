@@ -21,7 +21,7 @@ Validé avec Jordan le 2026-10-19 (fiche : [CADRAGE.md](CADRAGE.md)).
 
 - [x] 1. Le squelette : l'appli Android (logo en pouls, 5 thèmes, accueil vide, bandeau des mises à jour), la clé de
       signature dédiée et sa sauvegarde chiffrée, le dépôt GitHub.
-- [ ] 2. Le moteur partagé : le catalogue recopié depuis Mindcare, l'enquête et la recherche en Kotlin ; le test qui
+- [x] 2. Le moteur partagé : le catalogue recopié depuis Mindcare, l'enquête et la recherche en Kotlin ; le test qui
       compare le PC et le téléphone sur les 102 pannes.
 - [ ] 3. Les écrans : l'accueil en questions guidées et la recherche, l'enquête pas à pas, la réponse.
 - [ ] 4. Les images : les dessins des questions et les icônes des familles, dans le thème.
@@ -33,7 +33,10 @@ Validé avec Jordan le 2026-10-19 (fiche : [CADRAGE.md](CADRAGE.md)).
 
 Il faut Android Studio (son Java sert à Gradle : `JAVA_HOME=C:\Program Files\Android\Android Studio\jbr`).
 
-- `gradlew test` : les tests sur PC.
+- `gradlew test` : les tests sur PC, dont le test d'équivalence : 7 000 enquêtes et 1 100 recherches jouées par le vrai
+  moteur de Mindcare PC (`app/src/test/resources/reference-pc.json`), que le téléphone doit retrouver à l'identique.
+- `outils\exporter-reference.ps1` : refait cette référence avec Mindcare PC (après un changement du catalogue ou de la
+  logique sur PC ; la construction recopie d'abord le catalogue).
 - `gradlew assembleRelease` : l'APK signé avec la clé de Mindcare Mobile (`app/build/outputs/apk/release/`).
 - `bash outils/publier.sh <version> "- ce qui change"` : publie une version sur GitHub (APK et son empreinte).
 - La clé de signature : `C:\Users\death\.android\mindcare-mobile.jks` et `mindcare-mobile.properties` (hors du dépôt).
@@ -42,6 +45,8 @@ Il faut Android Studio (son Java sert à Gradle : `JAVA_HOME=C:\Program Files\An
 
 Le code est dans `app/src/main/java/io/github/jordanjacquot/mindcare/` :
 
+- `moteur/` : le catalogue (`Catalogue`), l'enquête (`enquete`, portage exact de `Get-Enquete`) et la recherche
+  (`chercher`, portage de `Find-Pannes`) ;
 - `ui/theme/` : la DA de la suite (fond de nuit, verre, boutons, logo en pouls) et ses 5 thèmes, avec la même
   « traduction » des couleurs que sur PC ;
 - `ui/` : les écrans ;
