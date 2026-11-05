@@ -59,7 +59,7 @@ fun EcranReparateur(
     val e = et.e
     val v = e.verdict ?: return
     val titre = catalogue.titreReponse(v).titre
-    val ecartees = catalogue.pistesEcartees(e)
+    val ecartees = catalogue.pistesEcartees(e, profil)
 
     EcranTelephone(
         barre = { BarreHaut("Pour le réparateur", retour = retour, profil = profil, ouvrirPc = ouvrirPc) },

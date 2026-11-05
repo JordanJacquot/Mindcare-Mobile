@@ -37,6 +37,7 @@ import io.github.jordanjacquot.mindcare.moteur.Ecarte
 import io.github.jordanjacquot.mindcare.moteur.EnqueteTelephone
 import io.github.jordanjacquot.mindcare.moteur.Objet
 import io.github.jordanjacquot.mindcare.moteur.ProfilPc
+import io.github.jordanjacquot.mindcare.moteur.TypePc
 import io.github.jordanjacquot.mindcare.moteur.pistesEcartees
 import io.github.jordanjacquot.mindcare.moteur.titreReponse
 import io.github.jordanjacquot.mindcare.ui.theme.BarreHaut
@@ -91,7 +92,7 @@ fun EcranReponse(
         v.type == "reparateur" -> "Ces pistes se départagent avec un outil de réparateur."
         else -> "Aucun suspect ne tient après tes réponses : la panne est peut-être ailleurs."
     }
-    val ecartees = catalogue.pistesEcartees(e)
+    val ecartees = catalogue.pistesEcartees(e, profil)
     var commentOuvert by rememberSaveable { mutableStateOf(false) }
 
     EcranTelephone(
@@ -203,7 +204,9 @@ fun EcranReponse(
             }
         }
 
-        if (catalogue.securite.isNotEmpty()) NoteSecurite(catalogue.securite.joinToString(" "))
+        // (sur un portable, pas la phrase du bloc d'alimentation : un portable n'en a pas)
+        val securite = catalogue.securite.filter { profil.type != TypePc.Portable || !it.contains("bloc d'alimentation", ignoreCase = true) }
+        if (securite.isNotEmpty()) NoteSecurite(securite.joinToString(" "))
         Lien("Changer ma dernière réponse", changerDerniere, couleur = c.p, centre = false)
     }
 }

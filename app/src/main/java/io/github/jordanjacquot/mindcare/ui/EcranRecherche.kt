@@ -17,6 +17,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,6 +35,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.jordanjacquot.mindcare.moteur.Catalogue
+import io.github.jordanjacquot.mindcare.moteur.Objet
 import io.github.jordanjacquot.mindcare.moteur.ProfilPc
 import io.github.jordanjacquot.mindcare.moteur.chercher
 import io.github.jordanjacquot.mindcare.moteur.concerne
@@ -45,6 +48,8 @@ import io.github.jordanjacquot.mindcare.ui.theme.Separation
 import io.github.jordanjacquot.mindcare.ui.theme.TitreBloc
 import io.github.jordanjacquot.mindcare.ui.theme.mc
 import io.github.jordanjacquot.mindcare.ui.theme.plasma
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** Au plus autant de résultats (les plus proches d'abord). */
 private const val MaxResultats = 15
@@ -103,12 +108,18 @@ fun EcranRecherche(
             Text("Écris ce qui se passe avec tes mots : « il ne s'allume plus », « pas de son », « écran bleu »...", fontSize = 15.sp, lineHeight = 21.sp, color = c.discret)
             return@EcranTelephone
         }
-        val trouvees = catalogue.chercher(texte)
+        // La recherche tourne hors du fil de l'écran : faite à chaque lettre pendant l'affichage, elle le bloquait
+        // (0,6 s par lettre sur le téléphone virtuel) et des lettres tapées vite se perdaient dans le champ.
+        // Pendant qu'elle cherche, les résultats de la lettre d'avant restent affichés.
+        val resultat by produceState<Pair<String, List<Objet>>?>(null, catalogue, texte) {
+            value = texte to withContext(Dispatchers.Default) { catalogue.chercher(texte) }
+        }
+        val (cherche, trouvees) = resultat ?: return@EcranTelephone
         val cachees = trouvees.filter { !it.concerne(profil) }
         val montrees = (if (toutAfficher) trouvees else trouvees.filter { it.concerne(profil) }).take(MaxResultats)
         BandeAdapte(profil, cachees, toutAfficher, basculerTout)
         if (montrees.isEmpty()) {
-            Text("Rien ne correspond à « ${texte.trim()} ». Essaie d'autres mots, ou choisis ce qui est concerné dans « Ça concerne quoi ? » à l'accueil.",
+            Text("Rien ne correspond à « ${cherche.trim()} ». Essaie d'autres mots, ou choisis ce qui est concerné dans « Ça concerne quoi ? » à l'accueil.",
                 fontSize = 15.sp, lineHeight = 21.sp, color = c.discret)
             return@EcranTelephone
         }

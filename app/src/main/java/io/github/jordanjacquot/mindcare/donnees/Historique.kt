@@ -95,7 +95,7 @@ fun Catalogue.rapport(panne: Objet, e: Enquete, titre: String, version: String, 
     if (profil != null && !profil.inconnu) l += "PC choisi : ${profil.libelleCourt}"
     l += ""; l += "Réponse : $titre"
     if (e.preuves.isNotEmpty()) { l += ""; l += "Comment on le sait :"; e.preuves.forEach { l += "- $it" } }
-    val ecartes = pistesEcartees(e).map { "${suspect(it.id)?.texte("Titre")}" + if (it.raison.isNotEmpty()) " (${it.raison})" else "" }
+    val ecartes = pistesEcartees(e, profil ?: ProfilPc.Inconnu).map { "${suspect(it.id)?.texte("Titre")}" + if (it.raison.isNotEmpty()) " (${it.raison})" else "" }
     if (ecartes.isNotEmpty()) { l += ""; l += "Écartés :"; ecartes.forEach { l += "- $it" } }
     if (e.verdict?.type == "reparateur") { l += ""; l += "Il reste : ${e.verdict.restants.joinToString(", ") { suspect(it)?.texte("Titre") ?: it }}" }
     l += ""; l += "Les réponses :"

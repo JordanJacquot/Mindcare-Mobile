@@ -86,8 +86,19 @@ fun Ecarte.horsSujet(): Boolean = raison == RaisonHorsSujet
 /** Un suspect urgent (un danger) ne s'affiche jamais comme une piste. */
 fun Catalogue.urgent(id: String): Boolean = suspect(id)?.vrai("Urgent") == true
 
-/** Les pistes encore possibles, à montrer. */
-fun Catalogue.pistesPossibles(e: Enquete): List<String> = e.restants.filter { !urgent(it) }
+/**
+ * Ce suspect ne concerne-t-il pas le PC choisi dans « Ton PC » ? Son « Sauf » contient le genre de ce PC (« portable »).
+ * Avant que l'enquête arrive à la question « portable ou fixe » (qui se répondra toute seule), le moteur garde encore
+ * ce suspect : sans cette règle, « Le bloc d'alimentation » s'affichait aux premières étapes pour un portable.
+ */
+fun Catalogue.horsDuPc(id: String, profil: ProfilPc): Boolean {
+    val t = profil.type ?: return false
+    return (suspect(id)?.liste("Sauf") ?: emptyList()).any { TypePc.depuis(it) == t }
+}
+
+/** Les pistes encore possibles, à montrer (ni urgentes, ni hors du PC choisi). */
+fun Catalogue.pistesPossibles(e: Enquete, profil: ProfilPc = ProfilPc.Inconnu): List<String> =
+    e.restants.filter { !urgent(it) && !horsDuPc(it, profil) }
 
 /**
  * Ce suspect n'a-t-il rien à voir avec ce PC ? Son « Sauf » contient un des mots retenus par l'enquête (« portable »,
@@ -98,9 +109,10 @@ fun Catalogue.horsSujet(e: Enquete, id: String): Boolean =
     e.restants.none { it.equals(id, ignoreCase = true) } &&
         (suspect(id)?.liste("Sauf") ?: emptyList()).any { s -> e.notes.any { it.equals(s, ignoreCase = true) } }
 
-/** Les pistes écartées, à montrer : ni hors sujet ni urgentes, une seule fois chacune. */
-fun Catalogue.pistesEcartees(e: Enquete): List<Ecarte> =
-    e.ecartes.filter { !it.horsSujet() && !horsSujet(e, it.id) && !urgent(it.id) }.distinctBy { it.id.lowercase() }
+/** Les pistes écartées, à montrer : ni hors sujet (ni hors du PC choisi) ni urgentes, une seule fois chacune. */
+fun Catalogue.pistesEcartees(e: Enquete, profil: ProfilPc = ProfilPc.Inconnu): List<Ecarte> =
+    e.ecartes.filter { !it.horsSujet() && !horsSujet(e, it.id) && !horsDuPc(it.id, profil) && !urgent(it.id) }
+        .distinctBy { it.id.lowercase() }
 
 /** La phrase de la réponse, et ce qu'il faut dire d'une pièce à changer (titre_reponse sur PC). */
 data class TitreReponse(val titre: String, val piece: Boolean, val supposee: Boolean)

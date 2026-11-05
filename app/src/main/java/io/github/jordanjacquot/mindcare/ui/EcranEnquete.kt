@@ -116,10 +116,12 @@ private fun Etape(
     val e = et.e
     val test = etape.texte("Type").equals("test", ignoreCase = true)
     var pistesOuvertes by rememberSaveable { mutableStateOf(false) }
-    val possibles = catalogue.pistesPossibles(e)
-    val ecartees = catalogue.pistesEcartees(e)
+    val possibles = catalogue.pistesPossibles(e, profil)
+    val ecartees = catalogue.pistesEcartees(e, profil)
     val reponses = etape.objets("Reponses")
-    val hauteurMax = (LocalConfiguration.current.screenHeightDp * 0.42f).dp
+    // Les réponses défilent au-delà d'un tiers de l'écran : à 42 %, une question longue avec 8 réponses (les codes de
+    // voyant HP) ne gardait que 4 lignes visibles en haut, et sa phrase d'exemple était coupée.
+    val hauteurMax = (LocalConfiguration.current.screenHeightDp * 0.34f).dp
 
     EcranTelephone(
         barre = {

@@ -145,6 +145,30 @@ class TonPcTest {
         }
     }
 
+    /**
+     * Dès la première étape, avant la question « portable ou fixe » : sur un portable, aucune piste « Sauf portable »
+     * (le bloc d'alimentation de « Il s'éteint d'un coup ») ni dans les pistes possibles ni dans les écartées.
+     * Trouvé sur le téléphone virtuel : la feuille des pistes de l'étape 1 montrait le bloc d'alimentation.
+     */
+    @Test fun lesPistesDUnAutreGenreDePcNeSAffichentPasAvantLaQuestionDuType() {
+        fun sauf(id: String) = catalogue.suspect(id)?.liste("Sauf") ?: emptyList()
+        var vues = 0
+        for (p in pannesAvecType) {
+            jusquAuBout(p, portableHp, 1) { et ->
+                assertTrue(p.texte("Id"), catalogue.pistesPossibles(et.e, portableHp).none { "portable" in sauf(it) })
+                assertTrue(p.texte("Id"), catalogue.pistesEcartees(et.e, portableHp).none { "portable" in sauf(it.id) })
+                if (et.e.restants.any { "portable" in sauf(it) }) vues++
+            }
+        }
+        assertTrue("le moteur garde bien de telles pistes au début", vues > 0)
+        // « Il s'éteint d'un coup », étape 1 : le cas vu à l'écran
+        val seteint = catalogue.pannes.first { it.texte("Id") == "seteint" }
+        val debut = catalogue.enqueteTelephone(seteint, emptyList(), portableHp)
+        assertTrue("alimentation" in debut.e.restants)
+        assertFalse("alimentation" in catalogue.pistesPossibles(debut.e, portableHp))
+        assertTrue("sur un PC fixe, elle reste", "alimentation" in catalogue.pistesPossibles(debut.e, fixe))
+    }
+
     // ---------------------------------------------------------------- le rapport
 
     @Test fun leRapportDitLePcChoisiEtLesVraiesPreuves() {
