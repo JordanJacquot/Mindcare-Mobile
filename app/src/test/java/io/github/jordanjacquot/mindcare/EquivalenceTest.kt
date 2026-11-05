@@ -37,7 +37,7 @@ class EquivalenceTest {
     /** La copie de l'appli est bien celle du PC (quand le dépôt Mindcare est à côté). */
     @Test fun laCopieEstCelleDuPc() {
         val pc = File("../../Mindcare/Mindcare/fichiers/enquetes.json")
-        if (pc.exists()) assertEquals("La copie du catalogue n'est pas celle du PC : reconstruis l'appli.", pc.readText(), catalogueTexte)
+        if (pc.exists()) assertEquals("La copie du catalogue n'est pas celle du PC : reconstruis l'appli.", pc.readText().replace("\r\n", "\n"), catalogueTexte.replace("\r\n", "\n"))
     }
 
     @Test fun lesEnquetesSontLesMemes() {
