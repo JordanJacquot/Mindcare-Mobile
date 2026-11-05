@@ -29,6 +29,18 @@ Validé avec Jordan le 2026-10-19 (fiche : [CADRAGE.md](CADRAGE.md)).
 - [x] 6. Le catalogue téléchargé : publié avec Mindcare PC, vérifié par le téléphone.
 - [x] 7. Première publication : Mindcare Mobile 0.1.0-beta.
 
+Plan 2, validé avec Jordan le 2026-11-05 : rattraper Mindcare PC 0.91.0, avec un design pensé pour le téléphone (pas
+un écran de PC rétréci).
+
+- [x] 1. Le moteur à niveau : 300 pannes, les groupes, le tri selon le PC ; la référence exportée du moteur Rust.
+- [x] 2. La maquette du nouveau design sur téléphone, dans les 5 thèmes, validée par Jordan.
+- [x] 3. Les écrans dans le nouveau design : accueil, une famille en groupes, « Raconte ton problème », l'enquête et
+      la feuille des pistes, la réponse, « Pour le réparateur » (le rapport partagé en message texte).
+- [x] 4. « Ton PC » : demandé à la première ouverture et gardé ; les pannes triées, « Tout afficher » pour une fois ;
+      la question portable ou fixe répondue toute seule ; les pistes qui ne concernent pas ce type de PC jamais
+      montrées ; « PC choisi » dans le rapport.
+- [ ] 5. Les essais sur téléphone virtuel dans les 5 thèmes, les captures, puis Mindcare Mobile 0.2.0.
+
 ## Développer
 
 Il faut Android Studio (son Java sert à Gradle : `JAVA_HOME=C:\Program Files\Android\Android Studio\jbr`).

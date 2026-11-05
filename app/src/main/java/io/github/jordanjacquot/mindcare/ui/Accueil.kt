@@ -10,23 +10,14 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,156 +26,207 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.jordanjacquot.mindcare.MindcareApp
 import io.github.jordanjacquot.mindcare.donnees.Diagnostic
 import io.github.jordanjacquot.mindcare.donnees.formaterDate
 import io.github.jordanjacquot.mindcare.maj.BandeauMiseAJour
-import io.github.jordanjacquot.mindcare.ui.theme.BoutonAccent
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.ui.platform.LocalContext
 import io.github.jordanjacquot.mindcare.moteur.Catalogue
-import io.github.jordanjacquot.mindcare.moteur.Objet
-import io.github.jordanjacquot.mindcare.moteur.chercher
-import io.github.jordanjacquot.mindcare.ui.theme.BoutonPilule
-import io.github.jordanjacquot.mindcare.ui.theme.Etiquette
-import io.github.jordanjacquot.mindcare.ui.theme.LogoMindcare
+import io.github.jordanjacquot.mindcare.moteur.ProfilPc
+import io.github.jordanjacquot.mindcare.moteur.enqueteTelephone
+import io.github.jordanjacquot.mindcare.moteur.minuscule
+import io.github.jordanjacquot.mindcare.ui.theme.BarreHaut
+import io.github.jordanjacquot.mindcare.ui.theme.Groupe
+import io.github.jordanjacquot.mindcare.ui.theme.Ic
+import io.github.jordanjacquot.mindcare.ui.theme.Icone
+import io.github.jordanjacquot.mindcare.ui.theme.LigneListe
+import io.github.jordanjacquot.mindcare.ui.theme.Separation
 import io.github.jordanjacquot.mindcare.ui.theme.Themes
-import io.github.jordanjacquot.mindcare.ui.theme.Verre
+import io.github.jordanjacquot.mindcare.ui.theme.TitreBloc
 import io.github.jordanjacquot.mindcare.ui.theme.mc
+import io.github.jordanjacquot.mindcare.ui.theme.plasma
 
 /**
- * L'accueil, en questions guidées comme sur PC : « 1. Ça concerne quoi ? » (les familles), puis « 2. Qu'est-ce qui se
- * passe ? » (les pannes de la famille). Tout en haut, on peut aussi écrire son problème avec ses mots.
+ * L'accueil (écran 1 de la maquette) : l'enquête pas finie d'abord (c'est souvent pour elle qu'on rouvre l'appli),
+ * puis « Raconte ton problème », les familles en grille de 2, les dernières enquêtes et « Comment ça marche ». Tout se
+ * fait défiler vers le bas.
  */
 @Composable
 fun Accueil(
     catalogue: Catalogue,
-    famille: String,
-    choisirFamille: (String) -> Unit,
-    ouvrirPanne: (String) -> Unit,
+    profil: ProfilPc,
+    ouvrirPc: () -> Unit,
+    ouvrirFamille: (String) -> Unit,
+    ouvrirRecherche: () -> Unit,
     reprendre: (Diagnostic) -> Unit,
     themeId: String,
     choisirTheme: (String) -> Unit,
 ) {
     val c = mc
-    var recherche by rememberSaveable { mutableStateOf("") }
+    val app = LocalContext.current.applicationContext as MindcareApp
+    val historique by app.historique.liste.collectAsStateWithLifecycle()
+    var commentOuvert by rememberSaveable { mutableStateOf(false) }
     var themesOuverts by rememberSaveable { mutableStateOf(false) }
-    val historique by (LocalContext.current.applicationContext as MindcareApp).historique.liste.collectAsStateWithLifecycle()
-    Column(
-        Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            LogoMindcare(52.dp)
-            Spacer(Modifier.width(12.dp))
-            Column {
-                Text("Mindcare", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color.White)
-                Text("Trouve pourquoi ton PC est en panne, en répondant à quelques questions simples.", style = MaterialTheme.typography.bodySmall, color = c.discret)
-            }
-        }
+
+    EcranTelephone(barre = { BarreHaut("Mindcare", avecLogo = true, profil = profil, ouvrirPc = ouvrirPc) }) {
         BandeauMiseAJour()
-        // Une enquête pas finie (un test remis à plus tard) : la reprendre est proposé tout de suite
-        historique.firstOrNull()?.takeIf { !it.Fini && catalogue.panne(it.Panne) != null }?.let { d ->
-            Verre(Modifier.fillMaxWidth(), teinte = c.p) {
-                Text("Ton enquête « ${catalogue.panne(d.Panne)!!.texte("Titre")} » n'est pas finie (commencée le ${formaterDate(d.Debut)}).", color = c.texte)
-                BoutonAccent("La reprendre", { reprendre(d) }, Modifier.padding(top = 10.dp))
-            }
-        }
-        OutlinedTextField(
-            value = recherche, onValueChange = { recherche = it }, singleLine = true,
-            leadingIcon = { Icon(Icons.Outlined.Search, null, tint = c.p) },
-            placeholder = { Text("Ou écris ton problème : « bip », « le son grésille »...", color = c.tresDiscret) },
-            shape = RoundedCornerShape(16.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = c.p.copy(alpha = 0.7f), unfocusedBorderColor = c.p.copy(alpha = 0.35f),
-                focusedContainerColor = Color.White.copy(alpha = 0.06f), unfocusedContainerColor = Color.White.copy(alpha = 0.04f),
-                cursorColor = c.p, focusedTextColor = Color.White, unfocusedTextColor = Color.White,
-            ),
-            modifier = Modifier.fillMaxWidth(),
-        )
 
-        when {
-            recherche.isNotBlank() -> {
-                val trouvees = catalogue.chercher(recherche).take(10)
-                if (trouvees.isEmpty()) Text("Rien ne correspond à « ${recherche.trim()} ». Essaie d'autres mots, ou efface pour répondre aux questions.", color = c.discret)
-                else {
-                    Text(if (trouvees.size == 1) "Une panne correspond :" else "${trouvees.size} pannes correspondent :", style = MaterialTheme.typography.bodySmall, color = c.discret)
-                    trouvees.forEach { p -> CartePanne(catalogue, p, avecFamille = true) { ouvrirPanne(p.texte("Id")) } }
-                }
-            }
-            famille.isNotEmpty() && catalogue.famille(famille) != null -> {
-                val f = catalogue.famille(famille)!!
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("1. Ça concerne : ${f.texte("Titre")}", color = c.discret, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                    BoutonPilule("Changer", { choisirFamille("") })
-                }
-                Text("2. Qu'est-ce qui se passe ?", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Color.White)
-                catalogue.pannes.filter { it.texte("Famille") == famille }.forEach { p -> CartePanne(catalogue, p) { ouvrirPanne(p.texte("Id")) } }
-                Text("Rien ne ressemble ? Écris ton problème tout en haut, ou change de famille.", style = MaterialTheme.typography.bodySmall, color = c.discret)
-            }
-            else -> {
-                Text("1. Ça concerne quoi ?", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Color.White)
-                catalogue.familles.chunked(2).forEach { ligne ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.height(IntrinsicSize.Min)) {
-                        ligne.forEach { f ->
-                            Verre(Modifier.weight(1f).fillMaxHeight(), onClick = { choisirFamille(f.texte("Id")) }, interieur = androidx.compose.foundation.layout.PaddingValues(14.dp)) {
-                                Dessin(f.texte("Icone"), Modifier.size(34.dp).padding(bottom = 6.dp))
-                                Text(f.texte("Titre"), fontWeight = FontWeight.SemiBold, color = Color.White)
-                                Text(f.texte("Phrase"), style = MaterialTheme.typography.bodySmall, color = c.discret, modifier = Modifier.padding(top = 3.dp))
-                            }
-                        }
-                        if (ligne.size == 1) Spacer(Modifier.weight(1f))
+        // L'enquête pas finie (un test remis à plus tard) : la reprendre est proposé tout de suite
+        val enCours = historique.firstOrNull()?.takeIf { !it.Fini && catalogue.panne(it.Panne) != null }
+        if (enCours != null) {
+            val p = catalogue.panne(enCours.Panne)!!
+            val et = catalogue.enqueteTelephone(p, enCours.Choix, profil)
+            val forme = RoundedCornerShape(20.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 76.dp).plasma(forme, fort = true).clip(forme)
+                    .clickable { reprendre(enCours) }.padding(start = 14.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
+            ) {
+                Box {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(c.ambre.copy(alpha = 0.14f))) {
+                        Icone(Ic.Horloge, c.ambre, taille = 22.dp)
                     }
+                    Box(Modifier.align(Alignment.TopEnd).padding(top = 0.dp).size(10.dp).background(c.ambre, CircleShape))
                 }
-                // Les enquêtes terminées : un appui pour revoir la réponse
-                val finies = historique.filter { it.Fini && catalogue.panne(it.Panne) != null }.take(5)
-                if (finies.isNotEmpty()) {
-                    Text("Tes enquêtes terminées", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Color.White, modifier = Modifier.padding(top = 8.dp))
-                    finies.forEach { d ->
-                        Verre(Modifier.fillMaxWidth(), onClick = { reprendre(d) }, interieur = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 10.dp)) {
-                            Text("${catalogue.panne(d.Panne)!!.texte("Titre")} : ${d.Titre.ifEmpty { "à faire vérifier" }}", color = c.texte)
-                            Text("le ${formaterDate(d.Debut)}", style = MaterialTheme.typography.bodySmall, color = c.tresDiscret, modifier = Modifier.padding(top = 2.dp))
-                        }
-                    }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("Reprendre l'enquête", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = c.texte)
+                    val ou = if (et.e.etape != null) ", étape ${et.numero} sur ${et.total}" else ""
+                    Text("${p.texte("Titre")}$ou", fontSize = 14.sp, lineHeight = 19.sp, color = c.discret, modifier = Modifier.padding(top = 3.dp))
+                }
+                Spacer(Modifier.width(8.dp))
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.size(44.dp).background(Brush.linearGradient(listOf(c.p, c.s)), CircleShape)) {
+                    Icone(Ic.Chevron, c.encre)
                 }
             }
         }
 
-        // Le thème (les 5 de la suite), replié par défaut
-        Spacer(Modifier.height(4.dp))
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { themesOuverts = !themesOuverts }.padding(vertical = 4.dp)) {
-            Etiquette("Thème : ${(Themes.firstOrNull { it.id == themeId } ?: Themes.first()).nom}", c.discret)
-            Text(if (themesOuverts) "  ▴" else "  ▾", color = c.discret)
+        // Raconte ton problème : le champ ouvre l'écran de recherche
+        TitreBloc("Raconte ton problème", Modifier.padding(top = 6.dp))
+        val formeChamp = RoundedCornerShape(18.dp)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 58.dp).plasma(formeChamp).clip(formeChamp).clickable(onClick = ouvrirRecherche).padding(horizontal = 16.dp),
+        ) {
+            Icone(Ic.Loupe, c.p)
+            Spacer(Modifier.width(10.dp))
+            Text("Par exemple : « bip », « écran bleu »", fontSize = 16.sp, color = c.tresDiscret, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        val app = LocalContext.current.applicationContext as MindcareApp
+        LigneDicter()
+
+        // Les familles, en grille de 2
+        TitreBloc("Ça concerne quoi ?", Modifier.padding(top = 6.dp), droite = "${catalogue.familles.size} familles")
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            catalogue.familles.chunked(2).forEach { ligne ->
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.height(IntrinsicSize.Min)) {
+                    ligne.forEach { f ->
+                        val forme = RoundedCornerShape(16.dp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f).fillMaxHeight().heightIn(min = 68.dp).clip(forme).background(c.surface).border(1.dp, c.bord, forme)
+                                .clickable { ouvrirFamille(f.texte("Id")) }.padding(10.dp),
+                        ) {
+                            Dessin(f.texte("Icone"), Modifier.size(34.dp))
+                            Spacer(Modifier.width(10.dp))
+                            Text(f.texte("Titre"), fontSize = 14.5.sp, lineHeight = 18.sp, fontWeight = FontWeight.Bold, color = c.texte)
+                        }
+                    }
+                    if (ligne.size == 1) Spacer(Modifier.weight(1f))
+                }
+            }
+        }
+
+        // Les dernières enquêtes (les 10 gardées) : un toucher pour reprendre ou revoir la réponse
+        val dernieres = historique.filter { it.Id != enCours?.Id && catalogue.panne(it.Panne) != null }
+        if (dernieres.isNotEmpty()) {
+            TitreBloc("Dernières enquêtes", Modifier.padding(top = 6.dp))
+            Groupe {
+                dernieres.forEachIndexed { i, d ->
+                    if (i > 0) Separation()
+                    val (point, quoi) = when {
+                        d.Fini && d.Suspect.isNotEmpty() -> c.vert to (if (d.Titre.startsWith("À vérifier")) d.Titre else "Trouvé : ${minuscule(d.Titre)}")
+                        d.Fini -> c.ambre to "Pour le réparateur"
+                        else -> c.p to "Pas finie"
+                    }
+                    LigneListe(catalogue.panne(d.Panne)!!.texte("Titre"), { reprendre(d) }, petit = "$quoi. Le ${formaterDate(d.Maj, "d MMMM")}", point = point)
+                }
+            }
+        }
+
+        // Comment ça marche, replié
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(14.dp)).clickable { commentOuvert = !commentOuvert }.padding(horizontal = 2.dp),
+        ) {
+            Icone(Ic.Aide, c.p)
+            Spacer(Modifier.width(8.dp))
+            Text("Comment ça marche", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = c.p, modifier = Modifier.weight(1f))
+            Icone(if (commentOuvert) Ic.ChevronHaut else Ic.ChevronBas, c.p)
+        }
+        if (commentOuvert) {
+            Groupe {
+                listOf(
+                    "Choisis ce qui ne va pas, ou raconte-le avec tes mots.",
+                    "Réponds aux questions, une à la fois. Si tu ne sais pas, dis-le : Mindcare fait avec.",
+                    "Mindcare écarte les pistes une à une, puis te dit ce qu'il faut faire, ou quoi montrer à un réparateur.",
+                    "Rien n'est envoyé : tout reste sur ton téléphone.",
+                ).forEachIndexed { i, t ->
+                    if (i > 0) Separation()
+                    Text(t, fontSize = 15.sp, lineHeight = 21.sp, color = c.texte, modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp))
+                }
+            }
+        }
+
+        // Le thème (les 5 de la suite), replié
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(14.dp)).clickable { themesOuverts = !themesOuverts }.padding(horizontal = 2.dp),
+        ) {
+            val t = Themes.firstOrNull { it.id == themeId } ?: Themes.first()
+            Box(Modifier.size(20.dp).background(Brush.linearGradient(listOf(Color(t.p), Color(t.s), Color(t.t))), CircleShape))
+            Spacer(Modifier.width(8.dp))
+            Text("Thème : ${t.nom}", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = c.discret, modifier = Modifier.weight(1f))
+            Icone(if (themesOuverts) Ic.ChevronHaut else Ic.ChevronBas, c.discret)
+        }
+        if (themesOuverts) {
+            Groupe {
+                Themes.forEachIndexed { i, t ->
+                    if (i > 0) Separation()
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable { choisirTheme(t.id) }.padding(horizontal = 14.dp, vertical = 8.dp),
+                    ) {
+                        Box(Modifier.size(22.dp).background(Brush.linearGradient(listOf(Color(t.p), Color(t.s), Color(t.t))), CircleShape)
+                            .then(if (t.id == themeId) Modifier.border(2.dp, Color.White, CircleShape) else Modifier))
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(t.nom, fontWeight = if (t.id == themeId) FontWeight.Bold else FontWeight.Normal, color = c.texte)
+                            Text(t.description, fontSize = 13.sp, color = c.discret)
+                        }
+                    }
+                }
+            }
+        }
         Text("Mindcare Mobile ${app.maj.versionActuelle} · catalogue ${app.majCatalogue.edition}, le même que Mindcare sur PC",
-            style = MaterialTheme.typography.bodySmall, color = c.tresDiscret)
-        if (themesOuverts) Verre(Modifier.fillMaxWidth()) {
-            Themes.forEach { t ->
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { choisirTheme(t.id) }.padding(vertical = 8.dp)) {
-                    Box(Modifier.size(22.dp).background(Brush.linearGradient(listOf(Color(t.p), Color(t.s), Color(t.t))), CircleShape)
-                        .then(if (t.id == themeId) Modifier.border(2.dp, Color.White, CircleShape) else Modifier))
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(t.nom, fontWeight = if (t.id == themeId) FontWeight.Bold else FontWeight.Normal, color = c.texte)
-                        Text(t.description, style = MaterialTheme.typography.bodySmall, color = c.discret)
-                    }
-                }
-            }
-        }
+            fontSize = 12.sp, color = c.tresDiscret)
     }
 }
 
-/** Une panne à choisir : son nom et sa phrase (et sa famille, dans les résultats d'une recherche). */
+/** « Pour parler, touche le micro du clavier. » (pas de bouton « Parler » à nous : le micro du clavier suffit) */
 @Composable
-private fun CartePanne(catalogue: Catalogue, p: Objet, avecFamille: Boolean = false, onClick: () -> Unit) {
-    Verre(Modifier.fillMaxWidth(), onClick = onClick, interieur = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 12.dp)) {
-        if (avecFamille) Etiquette(catalogue.famille(p.texte("Famille"))?.texte("Titre") ?: "", mc.p, Modifier.padding(bottom = 3.dp))
-        Text(p.texte("Titre"), fontWeight = FontWeight.SemiBold, color = Color.White)
-        Text(p.texte("Phrase"), style = MaterialTheme.typography.bodySmall, color = mc.discret, modifier = Modifier.padding(top = 3.dp))
+fun LigneDicter() {
+    val c = mc
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 4.dp)) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(26.dp).background(c.surface2, CircleShape)) { Icone(Ic.Micro, c.p, taille = 15.dp) }
+        Spacer(Modifier.width(8.dp))
+        Text("Pour parler, touche le micro du clavier.", fontSize = 13.5.sp, color = c.discret)
     }
 }

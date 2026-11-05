@@ -25,6 +25,15 @@ class MindcareApp : Application() {
     /** Les 10 dernières enquêtes (diagnostics.json, sur le téléphone). */
     val historique: Historique by lazy { Historique(java.io.File(filesDir, "diagnostics.json")) }
 
+    /**
+     * « Ton PC » : le genre de PC et sa marque, choisis à la première ouverture (donnees/TonPc.kt), gardés avec les
+     * autres réglages. Null tant que rien n'est choisi.
+     */
+    val tonPc: io.github.jordanjacquot.mindcare.donnees.MemoirePc by lazy {
+        val r = getSharedPreferences("apparence", MODE_PRIVATE)
+        io.github.jordanjacquot.mindcare.donnees.MemoirePc({ r.getString("ton_pc", null) }, { r.edit().putString("ton_pc", it).apply() })
+    }
+
     /** Le thème choisi : neon, crepuscule, terminal, arcade ou rubis (les 5 de la suite). */
     private val _theme by lazy { MutableStateFlow(getSharedPreferences("apparence", MODE_PRIVATE).getString("theme", "neon") ?: "neon") }
     val theme: StateFlow<String> get() = _theme

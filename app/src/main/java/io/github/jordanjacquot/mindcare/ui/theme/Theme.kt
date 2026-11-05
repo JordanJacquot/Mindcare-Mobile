@@ -137,6 +137,20 @@ class CouleursMindcare(val theme: ThemeMindcare) {
     val vert = Color(0xFF3DDC97)
     val ambre = Color(0xFFFFB547)
     val rouge = Color(0xFFFF5A6E)
+
+    // Les couleurs de la maquette téléphone (kit.css de Mindcare PC)
+    /** Les traits des boutons secondaires et des segments vides. */
+    val ligne = c(0xFF2A2450)
+    /** Le fond d'une carte au bord de plasma. */
+    val carte = c(0xD1100D26)
+    /** Le fond de la feuille qui monte du bas. */
+    val carte2 = c(0xFF1A1638)
+    /** Le texte sur un bouton en dégradé. */
+    val encre = c(0xFF0B0820)
+    val surface = Color.White.copy(alpha = 0.035f)
+    val surface2 = Color.White.copy(alpha = 0.08f)
+    val bord = Color.White.copy(alpha = 0.08f)
+    val separation = Color.White.copy(alpha = 0.07f)
 }
 
 val LocalCouleurs = staticCompositionLocalOf { CouleursMindcare(Themes.first()) }

@@ -2,79 +2,134 @@ package io.github.jordanjacquot.mindcare.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import io.github.jordanjacquot.mindcare.MindcareApp
-import io.github.jordanjacquot.mindcare.donnees.Historique
-import io.github.jordanjacquot.mindcare.moteur.enqueteTelephone
-import io.github.jordanjacquot.mindcare.moteur.titreVerdict
-import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.jordanjacquot.mindcare.MindcareApp
+import io.github.jordanjacquot.mindcare.donnees.Diagnostic
+import io.github.jordanjacquot.mindcare.donnees.Historique
+import io.github.jordanjacquot.mindcare.moteur.ProfilPc
+import io.github.jordanjacquot.mindcare.moteur.enqueteTelephone
+import io.github.jordanjacquot.mindcare.moteur.reponsesAvantLaDerniere
+import io.github.jordanjacquot.mindcare.moteur.titreReponse
 
 /**
- * Les écrans et le passage de l'un à l'autre : l'accueil (« Ça concerne quoi ? », puis « Qu'est-ce qui se passe ? »,
- * ou la recherche), l'enquête (une étape à la fois), puis la réponse. L'état tient en trois valeurs (la famille
- * choisie, la panne et les réponses données) : il survit à la rotation de l'écran.
+ * Les écrans et le passage de l'un à l'autre (la maquette validée par Jordan) : « Ton PC » à la première ouverture,
+ * l'accueil, une famille, « Raconte ton problème », l'enquête (une étape à la fois), la réponse et la page pour le
+ * réparateur. L'état tient en quelques valeurs simples : il survit à la rotation de l'écran. Le retour du téléphone
+ * marche partout : il ramène toujours à l'écran d'avant.
  */
 @Composable
 fun MindcareNavigation(themeId: String, choisirTheme: (String) -> Unit) {
     val app = LocalContext.current.applicationContext as MindcareApp
     val catalogue by app.majCatalogue.catalogue.collectAsStateWithLifecycle()
+    val profilGarde by app.tonPc.profil.collectAsStateWithLifecycle()
     var famille by rememberSaveable { mutableStateOf("") }
+    var rechercheOuverte by rememberSaveable { mutableStateOf(false) }
+    var recherche by rememberSaveable { mutableStateOf("") }
+    // « Tout afficher » : pour cette fois seulement (oublié en revenant à l'accueil, jamais gardé)
+    var toutAfficher by rememberSaveable { mutableStateOf(false) }
     var panneId by rememberSaveable { mutableStateOf("") }
     var choix by rememberSaveable { mutableStateOf(listOf<Int>()) }
     var diagId by rememberSaveable { mutableStateOf("") }
-    val panne = if (panneId.isEmpty()) null else catalogue.panne(panneId)
+    var reparateur by rememberSaveable { mutableStateOf(false) }
+    var tonPcOuvert by rememberSaveable { mutableStateOf(false) }
 
-    fun accueil() { panneId = ""; choix = emptyList() }
-
-    if (panne == null) {
-        BackHandler(enabled = famille.isNotEmpty()) { famille = "" }
-        Accueil(
-            catalogue = catalogue,
-            famille = famille,
-            choisirFamille = { famille = it },
-            ouvrirPanne = { id -> famille = catalogue.panne(id)?.texte("Famille") ?: famille; panneId = id; choix = emptyList(); diagId = Historique.nouvelId() },
-            reprendre = { d -> famille = catalogue.panne(d.Panne)?.texte("Famille") ?: ""; panneId = d.Panne; choix = d.Choix; diagId = d.Id },
-            themeId = themeId,
-            choisirTheme = choisirTheme,
+    // « Ton PC » : demandé à la première ouverture, puis en touchant la pastille de la barre du haut
+    if (profilGarde == null || tonPcOuvert) {
+        BackHandler(enabled = profilGarde != null) { tonPcOuvert = false }
+        EcranTonPc(
+            depart = profilGarde,
+            valider = { p -> app.tonPc.choisir(p); tonPcOuvert = false; toutAfficher = false },
+            retour = if (profilGarde == null) null else ({ tonPcOuvert = false }),
         )
         return
     }
+    val profil = profilGarde ?: ProfilPc.Inconnu
+    val ouvrirPc = { tonPcOuvert = true }
+    val panne = if (panneId.isEmpty()) null else catalogue.panne(panneId)
 
-    val et = catalogue.enqueteTelephone(panne, choix)
+    fun ouvrirPanne(id: String) { panneId = id; choix = emptyList(); diagId = Historique.nouvelId(); reparateur = false }
+    fun reprendre(d: Diagnostic) { famille = ""; rechercheOuverte = false; panneId = d.Panne; choix = d.Choix; diagId = d.Id; reparateur = false }
+    fun quitterEnquete() { panneId = ""; choix = emptyList(); reparateur = false }
+    fun accueil() { quitterEnquete(); famille = ""; rechercheOuverte = false; recherche = ""; toutAfficher = false }
+    fun fermerRecherche() { rechercheOuverte = false; if (famille.isEmpty()) toutAfficher = false }
+    fun fermerFamille() { famille = ""; toutAfficher = false }
+
+    if (panne == null) {
+        when {
+            rechercheOuverte -> {
+                BackHandler { fermerRecherche() }
+                EcranRecherche(
+                    catalogue = catalogue, texte = recherche, changerTexte = { recherche = it },
+                    profil = profil, toutAfficher = toutAfficher, basculerTout = { toutAfficher = !toutAfficher },
+                    ouvrirPanne = ::ouvrirPanne, retour = ::fermerRecherche, ouvrirPc = ouvrirPc,
+                )
+            }
+            famille.isNotEmpty() && catalogue.famille(famille) != null -> {
+                BackHandler { fermerFamille() }
+                EcranFamille(
+                    catalogue = catalogue, famille = famille, profil = profil,
+                    toutAfficher = toutAfficher, basculerTout = { toutAfficher = !toutAfficher },
+                    ouvrirPanne = ::ouvrirPanne, ouvrirRecherche = { rechercheOuverte = true },
+                    retour = ::fermerFamille, ouvrirPc = ouvrirPc,
+                )
+            }
+            else -> Accueil(
+                catalogue = catalogue, profil = profil, ouvrirPc = ouvrirPc,
+                ouvrirFamille = { famille = it; toutAfficher = false },
+                ouvrirRecherche = { rechercheOuverte = true },
+                reprendre = ::reprendre,
+                themeId = themeId, choisirTheme = choisirTheme,
+            )
+        }
+        return
+    }
+
+    val et = catalogue.enqueteTelephone(panne, choix, profil)
     // L'enquête est gardée à chaque réponse ; une enquête finie le reste tant qu'une nouvelle réponse ne la remplace pas
     LaunchedEffect(diagId, et.choix) {
         val v = et.e.verdict
-        if (v != null) app.historique.enregistrer(diagId, panneId, et.choix, true, v.suspect, catalogue.titreVerdict(v))
+        if (v != null) app.historique.enregistrer(diagId, panneId, et.choix, true, v.suspect, catalogue.titreReponse(v).titre)
         else if (app.historique.trouver(diagId)?.Fini != true) app.historique.enregistrer(diagId, panneId, et.choix, false, null, "")
     }
-    // Revenir d'une étape (les réponses données par le téléphone tout seul se défont avec celle d'avant)
+    // Revenir d'une étape (les réponses données toutes seules se refont toutes seules)
     fun precedente() {
-        var c = et.choix
-        if (c.size <= et.auto) { accueil(); return }
-        c = c.dropLast(1)
-        while (c.isNotEmpty() && catalogue.enqueteTelephone(panne, c).choix.size > c.size) c = c.dropLast(1)
-        choix = c
+        val c = et.reponsesAvantLaDerniere()
+        if (c == null) quitterEnquete() else choix = c
     }
-    BackHandler { precedente() }
-    if (et.e.etape != null) {
-        EcranEnquete(
-            catalogue = catalogue, panne = panne, et = et,
-            repondre = { n -> choix = et.choix + n },
-            changerReponse = { k -> choix = et.choix.take(k) },
-            precedente = ::precedente,
-            accueil = ::accueil,
-        )
-    } else {
-        EcranReponse(
-            catalogue = catalogue, panne = panne, e = et.e, version = "${app.maj.versionActuelle} (catalogue ${app.majCatalogue.edition})",
-            changerDerniere = ::precedente,
-            accueil = ::accueil,
-        )
+    val version = "${app.maj.versionActuelle} (catalogue ${app.majCatalogue.edition})"
+    when {
+        et.e.etape != null -> {
+            BackHandler { precedente() }
+            EcranEnquete(
+                catalogue = catalogue, panne = panne, et = et, profil = profil, ouvrirPc = ouvrirPc,
+                repondre = { n -> choix = et.choix + n },
+                changerReponse = { k -> choix = et.choix.take(k) },
+                precedente = ::precedente,
+                plusTard = ::accueil,
+            )
+        }
+        reparateur -> {
+            BackHandler { reparateur = false }
+            EcranReparateur(
+                catalogue = catalogue, panne = panne, et = et, profil = profil, version = version,
+                date = app.historique.trouver(diagId)?.Maj, ouvrirPc = ouvrirPc, retour = { reparateur = false },
+            )
+        }
+        else -> {
+            BackHandler { quitterEnquete() }
+            EcranReponse(
+                catalogue = catalogue, panne = panne, et = et, profil = profil, ouvrirPc = ouvrirPc,
+                pourLeReparateur = { reparateur = true },
+                changerDerniere = ::precedente,
+                retour = ::quitterEnquete,
+                accueil = ::accueil,
+            )
+        }
     }
 }

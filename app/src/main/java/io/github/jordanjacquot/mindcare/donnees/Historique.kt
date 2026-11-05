@@ -3,6 +3,9 @@ package io.github.jordanjacquot.mindcare.donnees
 import io.github.jordanjacquot.mindcare.moteur.Catalogue
 import io.github.jordanjacquot.mindcare.moteur.Enquete
 import io.github.jordanjacquot.mindcare.moteur.Objet
+import io.github.jordanjacquot.mindcare.moteur.ProfilPc
+import io.github.jordanjacquot.mindcare.moteur.demandeSiCePc
+import io.github.jordanjacquot.mindcare.moteur.pistesEcartees
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
@@ -79,20 +82,24 @@ fun formaterDate(iso: String, modele: String = "d MMMM 'à' HH'h'mm"): String = 
     if (t.startsWith("1 ")) "1er" + t.substring(1) else t
 }.getOrDefault(iso)
 
-/** Le rapport pour le réparateur (Get-ResumeTexte sur PC) : la panne, la réponse, les preuves, les réponses. */
-fun Catalogue.rapport(panne: Objet, e: Enquete, titre: String, version: String): String {
+/**
+ * Le rapport pour le réparateur (Get-ResumeTexte sur PC), en texte simple pour un SMS, WhatsApp ou un e-mail : la
+ * panne, le PC choisi dans « Ton PC » (s'il est connu), la réponse, les preuves, les pistes écartées (jamais celles
+ * hors sujet, qui ne concernent pas ce genre de PC), les réponses.
+ */
+fun Catalogue.rapport(panne: Objet, e: Enquete, titre: String, version: String, profil: ProfilPc? = null): String {
     val l = ArrayList<String>()
     l += "Mindcare : rapport de l'enquête"; l += ""
     l += "Date : ${formaterDate(LocalDateTime.now().withNano(0).toString(), "d MMMM yyyy 'à' HH'h'mm")}"
     l += "Panne : ${panne.texte("Titre")}"
+    if (profil != null && !profil.inconnu) l += "PC choisi : ${profil.libelleCourt}"
     l += ""; l += "Réponse : $titre"
     if (e.preuves.isNotEmpty()) { l += ""; l += "Comment on le sait :"; e.preuves.forEach { l += "- $it" } }
-    val ecartes = e.ecartes.filter { suspect(it.id)?.vrai("Urgent") != true }
-        .map { "${suspect(it.id)?.texte("Titre")}" + if (it.raison.isNotEmpty()) " (${it.raison})" else "" }
+    val ecartes = pistesEcartees(e).map { "${suspect(it.id)?.texte("Titre")}" + if (it.raison.isNotEmpty()) " (${it.raison})" else "" }
     if (ecartes.isNotEmpty()) { l += ""; l += "Écartés :"; ecartes.forEach { l += "- $it" } }
     if (e.verdict?.type == "reparateur") { l += ""; l += "Il reste : ${e.verdict.restants.joinToString(", ") { suspect(it)?.texte("Titre") ?: it }}" }
     l += ""; l += "Les réponses :"
-    e.faits.filter { f -> f.etape.objets("Reponses").none { it.texte("Note") == "cepc" } }
+    e.faits.filter { f -> !f.etape.demandeSiCePc() }
         .forEach { l += "- ${it.texte}"; l += "  ${it.reponse}" }
     l += ""; l += "Fait avec Mindcare Mobile $version, sur un téléphone."
     return l.joinToString("\n")
