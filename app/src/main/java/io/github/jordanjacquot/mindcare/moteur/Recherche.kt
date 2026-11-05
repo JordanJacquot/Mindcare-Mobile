@@ -8,7 +8,8 @@ private val Vides = setOf(
     "il", "le", "la", "les", "un", "une", "de", "du", "des", "ne", "pas", "plus", "mon", "ma", "mes", "pc", "ordi", "ordinateur",
     "et", "ou", "est", "en", "sur", "qui", "que", "se", "ca", "tout", "au", "aux", "je", "j", "me", "quand", "avec",
 )
-private val Accents = Regex("\\p{Mn}")
+// (tous les signes combinants, comme le moteur Rust du PC : Mn, mais aussi les rares Mc et Me)
+private val Accents = Regex("[\\p{Mn}\\p{Mc}\\p{Me}]")
 private val PasSimple = Regex("[^a-z0-9 ]")
 private val Espaces = Regex("\\s+")
 

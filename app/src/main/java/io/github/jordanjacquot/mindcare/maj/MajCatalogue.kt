@@ -147,6 +147,8 @@ fun Catalogue.problemes(imageExiste: (String) -> Boolean): List<String> {
     if (version > FormatConnu) pb += "format $version trop récent (cette appli lit jusqu'au $FormatConnu)"
     if (pannes.isEmpty()) pb += "aucune panne"
     familles.forEach { f -> if (f.texte("Icone").isNotEmpty() && !imageExiste(f.texte("Icone"))) pb += "icône ${f.texte("Icone")} manquante" }
+    familles.flatMap { it.objets("Groupes") }.map { it.texte("Icone") }.distinct()
+        .forEach { if (it.isNotEmpty() && !imageExiste(it)) pb += "icône $it manquante" }
     for (p in pannes) {
         val id = p.texte("Id")
         if (famille(p.texte("Famille")) == null) pb += "$id : famille inconnue"

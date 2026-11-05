@@ -98,13 +98,17 @@ fun Catalogue.enquete(panne: Objet, choix: List<Int> = emptyList()): Enquete {
 }
 
 /** Un nom en minuscule au début (« la mémoire (RAM) »), sans toucher aux noms propres. */
-fun minuscule(texte: String): String = if (texte.isEmpty()) "" else texte.substring(0, 1).lowercase() + texte.substring(1)
+fun minuscule(texte: String): String {
+    if (texte.isEmpty()) return ""
+    val fin = texte.offsetByCodePoints(0, 1)   // (la première lettre entière, même hors du plan de base, comme le Rust)
+    return texte.substring(0, fin).lowercase() + texte.substring(fin)
+}
 
 /** La phrase de la réponse finale (Get-VerdictTitre sur PC). */
 fun Catalogue.titreVerdict(v: Verdict?): String {
     if (v == null) return ""
     return when (v.type) {
-        "trouve" -> { val s = suspect(v.suspect); if (v.detail.isNotEmpty()) "${s?.texte("Trouve")} : ${v.detail}" else s?.texte("Trouve") ?: "" }
+        "trouve" -> { val t = suspect(v.suspect)?.texte("Trouve") ?: ""; if (v.detail.isNotEmpty()) "$t : ${v.detail}" else t }
         "elimination" -> suspect(v.suspect)?.texte("Trouve") ?: ""
         "reparateur" -> "Il reste ${v.restants.joinToString(" ou ") { minuscule(suspect(it)?.texte("Titre") ?: "") }} : un réparateur départagera"
         else -> "Aucune piste ne correspond : montre ce rapport à un réparateur"

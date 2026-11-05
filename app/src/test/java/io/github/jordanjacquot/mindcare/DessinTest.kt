@@ -25,6 +25,7 @@ class DessinTest {
     /** Chaque image citée par le catalogue (étapes et familles) existe. */
     @Test fun chaqueImageCiteeExiste() {
         val citees = catalogue.familles.map { it.texte("Icone") } +
+            catalogue.familles.flatMap { f -> f.objets("Groupes").map { it.texte("Icone") } } +
             catalogue.pannes.flatMap { p -> catalogue.etapes(p).map { it.texte("Image") } }
         val manquantes = citees.filter { it.isNotEmpty() && !File(dossier, "$it.svg").exists() }.distinct()
         assertTrue("images manquantes : $manquantes", manquantes.isEmpty())

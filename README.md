@@ -33,10 +33,12 @@ Validé avec Jordan le 2026-10-19 (fiche : [CADRAGE.md](CADRAGE.md)).
 
 Il faut Android Studio (son Java sert à Gradle : `JAVA_HOME=C:\Program Files\Android\Android Studio\jbr`).
 
-- `gradlew test` : les tests sur PC, dont le test d'équivalence : 7 000 enquêtes et 1 100 recherches jouées par le vrai
-  moteur de Mindcare PC (`app/src/test/resources/reference-pc.json`), que le téléphone doit retrouver à l'identique.
+- `gradlew test` : les tests sur PC, dont le test d'équivalence : 20 000 enquêtes, 3 300 recherches, les groupes de
+  chaque famille et le tri des pannes selon le PC (« PourPc »), joués par le vrai moteur de Mindcare PC, en Rust
+  (`app/src/test/resources/reference-pc.json`), que le téléphone doit retrouver à l'identique.
 - `outils\exporter-reference.ps1` : refait cette référence avec Mindcare PC (après un changement du catalogue ou de la
-  logique sur PC ; la construction recopie d'abord le catalogue).
+  logique sur PC ; la construction recopie d'abord le catalogue). Il lance l'exemple `exporter_reference` du moteur Rust
+  (`rust\mindcare-moteur\examples\` du dépôt Mindcare) ; Rust doit être installé (`D:\Outils\Rust`).
 - `gradlew assembleRelease` : l'APK signé avec la clé de Mindcare Mobile (`app/build/outputs/apk/release/`).
 - `bash outils/publier.sh <version> "- ce qui change"` : publie une version sur GitHub (APK et son empreinte).
 - La clé de signature : `C:\Users\death\.android\mindcare-mobile.jks` et `mindcare-mobile.properties` (hors du dépôt).
@@ -46,7 +48,8 @@ Il faut Android Studio (son Java sert à Gradle : `JAVA_HOME=C:\Program Files\An
 Le code est dans `app/src/main/java/io/github/jordanjacquot/mindcare/` :
 
 - `moteur/` : le catalogue (`Catalogue`), l'enquête (`enquete`, portage exact de `Get-Enquete`) et la recherche
-  (`chercher`, portage de `Find-Pannes`) ;
+  (`chercher`, portage de `Find-Pannes`), les groupes d'une famille (`groupes`, `groupesPour`) et le tri selon le PC
+  (`Pc.kt` : `ProfilPc`, `concerne`, `pannesPour`, `chercherPour`), portés du moteur Rust du PC ;
 - `ui/theme/` : la DA de la suite (fond de nuit, verre, boutons, logo en pouls) et ses 5 thèmes, avec la même
   « traduction » des couleurs que sur PC ;
 - `ui/` : les écrans ;

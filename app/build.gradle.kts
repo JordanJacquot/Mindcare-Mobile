@@ -55,7 +55,8 @@ android {
 
 // Le catalogue de pannes vient de Mindcare PC, la seule source (voir CLAUDE.md) : recopié à chaque construction quand
 // le dépôt Mindcare est à côté (D:\Projets\Mindcare). La copie est commitée, pour construire même sans lui.
-val pc = rootProject.file("../Mindcare/Mindcare/fichiers")
+// (une autre copie du dépôt Mindcare : « gradlew preBuild -PmindcarePc=<son dossier Mindcare\fichiers> »)
+val pc = (findProperty("mindcarePc") as String?)?.let { file(it) } ?: rootProject.file("../Mindcare/Mindcare/fichiers")
 val copierCatalogue by tasks.registering(Copy::class) {
     description = "Recopie enquetes.json et les images depuis Mindcare PC"
     onlyIf { pc.resolve("enquetes.json").exists() }
@@ -65,6 +66,15 @@ val copierCatalogue by tasks.registering(Copy::class) {
     val edition = providers.exec { commandLine("git", "-C", pc.parentFile.parentFile.path, "describe", "--tags", "--abbrev=0"); isIgnoreExitValue = true }
         .standardOutput.asText
     val sortie = layout.projectDirectory.file("src/main/assets/catalogue/edition.txt").asFile
+    // Les fins de ligne de git (LF), celles du catalogue publié : git pour Windows écrit des CRLF dans le dossier de
+    // Mindcare (core.autocrlf), et la copie commitée ici doit rester le fichier de git, octet pour octet.
+    val dossier = layout.projectDirectory.dir("src/main/assets/catalogue").asFile
+    doLast {
+        dossier.walkTopDown().filter { it.isFile && (it.extension == "json" || it.extension == "svg") }.forEach { f ->
+            val texte = f.readBytes().toString(Charsets.ISO_8859_1)
+            if (texte.contains("\r\n")) f.writeBytes(texte.replace("\r\n", "\n").toByteArray(Charsets.ISO_8859_1))
+        }
+    }
     doLast { edition.get().trim().removePrefix("v").takeIf { it.isNotEmpty() }?.let { sortie.writeText(it) } }
 }
 tasks.named("preBuild") { dependsOn(copierCatalogue) }

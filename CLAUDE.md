@@ -8,8 +8,9 @@ et `D:\Projets\Mindcare\Mindcare\fichiers\images\` (dépôt JordanJacquot/Mindca
   construction ; une correction faite ici serait écrasée et manquerait au PC.
 - Ajouter une panne = la faire dans le dépôt Mindcare (voir son `CLAUDE.md`), puis la publier : le téléphone télécharge
   le catalogue tout seul.
-- Le moteur d'enquête et la recherche d'ici doivent donner **exactement** les mêmes résultats que ceux du PC
-  (`modules\enquete.ps1`) : le test d'équivalence le vérifie. Si le PC change sa logique, changer la même ici.
+- Le moteur d'enquête, la recherche, les groupes et le tri selon le PC d'ici doivent donner **exactement** les mêmes
+  résultats que ceux du PC (son moteur Rust, `rust\mindcare-moteur`) : le test d'équivalence le vérifie. Si le PC
+  change sa logique, changer la même ici.
 - Un nouveau champ dans `enquetes.json` doit être appris ici aussi ; un format trop récent (`Version`) n'est pas lu :
   l'appli garde son catalogue et propose de se mettre à jour.
 
