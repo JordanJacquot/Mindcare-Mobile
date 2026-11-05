@@ -125,7 +125,7 @@ fun Catalogue.titreReponse(v: Verdict?): TitreReponse {
     val s = suspect(v?.suspect)
     val piece = s?.vrai("Piece") == true
     val supposee = piece && v?.type == "elimination"
-    val titre = if (supposee) "À vérifier : ${minuscule(s.texte("Titre"))}" else titreVerdict(v)
+    val titre = if (supposee) "À vérifier : ${minuscule(s.texte("Titre"))}" else titreAffiche(v)
     return TitreReponse(titre, piece, supposee)
 }
 

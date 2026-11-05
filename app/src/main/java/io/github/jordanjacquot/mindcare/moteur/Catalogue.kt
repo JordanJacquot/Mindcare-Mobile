@@ -60,6 +60,8 @@ class Catalogue(val json: JsonObject) {
     val securite: List<String> = Objet(json).liste("Securite")
     private val suspects: JsonObject = json["Suspects"] as? JsonObject ?: JsonObject(emptyMap())
     private val tests: JsonObject = json["Tests"] as? JsonObject ?: JsonObject(emptyMap())
+    /** Les pannes en texte simple pour la recherche (Recherche.kt), préparées à la première recherche. */
+    internal val fichesRecherche: List<FicheRecherche> by lazy { preparerRecherche() }
 
     // (les Id se comparent sans tenir compte des majuscules ; une panne ou une famille sans Id n'est jamais trouvée)
     fun panne(id: String): Objet? = pannes.firstOrNull { it.a("Id") && egal(it.texte("Id"), id) }

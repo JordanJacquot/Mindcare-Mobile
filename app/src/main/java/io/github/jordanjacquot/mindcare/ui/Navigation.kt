@@ -91,11 +91,12 @@ fun MindcareNavigation(themeId: String, choisirTheme: (String) -> Unit) {
     }
 
     val et = catalogue.enqueteTelephone(panne, choix, profil)
-    // L'enquête est gardée à chaque réponse ; une enquête finie le reste tant qu'une nouvelle réponse ne la remplace pas
+    // L'enquête est gardée à chaque réponse ; une enquête finie le reste tant qu'une nouvelle réponse ne la remplace pas,
+    // et une enquête commencée le reste même si le retour retire toutes ses réponses (Historique.garderEnCours)
     LaunchedEffect(diagId, et.choix) {
         val v = et.e.verdict
         if (v != null) app.historique.enregistrer(diagId, panneId, et.choix, true, v.suspect, catalogue.titreReponse(v).titre)
-        else if (app.historique.trouver(diagId)?.Fini != true) app.historique.enregistrer(diagId, panneId, et.choix, false, null, "")
+        else app.historique.garderEnCours(diagId, panneId, et.choix)
     }
     // Revenir d'une étape (les réponses données toutes seules se refont toutes seules)
     fun precedente() {

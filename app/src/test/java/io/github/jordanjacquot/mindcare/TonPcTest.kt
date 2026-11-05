@@ -185,6 +185,37 @@ class TonPcTest {
         assertFalse(r.contains(Char(0x2014)) || r.contains(Char(0x2013)))
     }
 
+    /**
+     * « Ton PC, c'est un ordinateur portable ou un PC fixe ? », répondue toute seule par « Ton PC », n'est ni dans
+     * « Les réponses » du rapport, ni dans les réponses montrées (« Tes réponses », « Les questions et tes réponses ») :
+     * la ligne « PC choisi » le dit déjà. Sans profil, la question est posée, et elle y est.
+     */
+    @Test fun laQuestionDuTypeRepondueToutSeuleNEstPasDansLesReponses() {
+        var vus = 0
+        for (p in pannesAvecType) for (r in listOf(0, 1)) {
+            val et = jusquAuBout(p, portableHp, r)
+            val iType = et.e.faits.indexOfFirst { it.etape.demandeLeTypeDePc() }
+            if (iType < 0) continue
+            vus++
+            assertTrue("${p.texte("Id")} : réponse donnée toute seule", iType in et.autos)
+            assertTrue(et.faitsMontres.none { it.value.etape.demandeLeTypeDePc() })
+            val rapport = catalogue.rapport(p, et, catalogue.titreReponse(et.e.verdict).titre, "0.2.0", portableHp)
+            val reponses = rapport.substringAfter("Les réponses :")
+            assertFalse("${p.texte("Id")} : la question du type dans le rapport\n$rapport", reponses.contains(et.e.faits[iType].texte))
+            assertTrue(rapport.contains("PC choisi : Portable HP"))
+            // les autres réponses y sont toutes
+            for ((_, f) in et.faitsMontres) assertTrue(reponses.contains("- ${f.texte}"))
+        }
+        assertTrue("des enquêtes passent par la question du type", vus >= 5)
+        // Sans profil : posée par la personne, elle est dans le rapport
+        val sansProfil = pannesAvecType.map { jusquAuBout(it, ProfilPc.Inconnu, 0) to it }
+            .first { (et, _) -> et.e.faits.any { f -> f.etape.demandeLeTypeDePc() } }
+        val (et, p) = sansProfil
+        val type = et.e.faits.first { it.etape.demandeLeTypeDePc() }
+        val rapport = catalogue.rapport(p, et, catalogue.titreReponse(et.e.verdict).titre, "0.2.0", ProfilPc.Inconnu)
+        assertTrue(rapport.substringAfter("Les réponses :").contains("- ${type.texte}"))
+    }
+
     @Test fun sansProfilConnuPasDeLignePcChoisi() {
         val p = catalogue.panne("wificoupe")!!
         val e = catalogue.enqueteTelephone(p, listOf(1, 1, 0)).e

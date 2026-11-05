@@ -114,3 +114,47 @@ fun Catalogue.titreVerdict(v: Verdict?): String {
         else -> "Aucune piste ne correspond : montre ce rapport à un réparateur"
     }
 }
+
+/** Un texte avec une majuscule au début (« la batterie » : « La batterie »). */
+fun majuscule(texte: String): String {
+    if (texte.isEmpty()) return ""
+    val fin = texte.offsetByCodePoints(0, 1)
+    return texte.substring(0, fin).uppercase() + texte.substring(fin)
+}
+
+/** Ce texte simple commence-t-il par ces mots (des mots entiers) ? */
+private fun commencePar(t: String, debut: String): Boolean =
+    debut.isNotEmpty() && (t == debut || (t.startsWith(debut) && t.substring(debut.length).startsWith(" ")))
+
+private val Articles = setOf("le", "la", "l", "les", "un", "une", "des")
+
+/**
+ * La phrase de la réponse quand une réponse a confirmé le suspect avec un détail (son « Trouve » et le « Detail ») :
+ * le portage exact de `titre_avec_detail` du PC. titreVerdict colle les deux (« Trouve : Detail ») et répétait parfois
+ * ce que le détail précise : « La batterie (ou le chargeur) lâche : la batterie » devient « La batterie lâche ».
+ */
+fun titreAvecDetail(trouve: String, detail: String): String {
+    val d = simple(detail)
+    if (d.isEmpty()) return trouve
+    val i = trouve.indexOf(" (ou ")
+    if (i >= 0) {
+        val j = trouve.indexOf(')', i)
+        if (j >= 0) {
+            val a = trouve.substring(0, i); val b = trouve.substring(i + " (ou ".length, j); val reste = trouve.substring(j + 1)
+            if (d == simple(a) || commencePar(d, simple(b))) return majuscule(detail) + reste
+        }
+    }
+    val deux = trouve.indexOf(" : ")
+    if (deux >= 0) {
+        val intro = trouve.substring(0, deux); val liste = trouve.substring(deux + 3)
+        if (liste.split(", ").flatMap { it.split(" ou ") }.any { simple(it) == d }) return "$intro : $detail"
+    }
+    val mt = simple(trouve).split(' '); val md = d.split(' ')
+    if (mt.size >= 2 && md.size >= 3 && mt[0] in Articles && md[0] in Articles && mt[1] == md[1]) return majuscule(detail)
+    return if (trouve.contains(" : ")) "$trouve ($detail)" else "$trouve : $detail"
+}
+
+/** La phrase de la réponse à montrer (l'écran, l'historique, le rapport) : titre_affiche du PC. */
+fun Catalogue.titreAffiche(v: Verdict?): String =
+    if (v != null && v.type == "trouve" && v.detail.isNotEmpty()) titreAvecDetail(suspect(v.suspect)?.texte("Trouve") ?: "", v.detail)
+    else titreVerdict(v)

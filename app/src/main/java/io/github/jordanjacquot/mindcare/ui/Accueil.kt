@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.jordanjacquot.mindcare.MindcareApp
 import io.github.jordanjacquot.mindcare.donnees.Diagnostic
+import io.github.jordanjacquot.mindcare.donnees.aReprendre
 import io.github.jordanjacquot.mindcare.donnees.formaterDate
 import io.github.jordanjacquot.mindcare.maj.BandeauMiseAJour
 import io.github.jordanjacquot.mindcare.moteur.Catalogue
@@ -80,7 +81,7 @@ fun Accueil(
         BandeauMiseAJour()
 
         // L'enquête pas finie (un test remis à plus tard) : la reprendre est proposé tout de suite
-        val enCours = historique.firstOrNull()?.takeIf { !it.Fini && catalogue.panne(it.Panne) != null }
+        val enCours = historique.aReprendre(catalogue)
         if (enCours != null) {
             val p = catalogue.panne(enCours.Panne)!!
             val et = catalogue.enqueteTelephone(p, enCours.Choix, profil)

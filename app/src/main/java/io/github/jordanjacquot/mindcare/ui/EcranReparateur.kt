@@ -24,7 +24,6 @@ import io.github.jordanjacquot.mindcare.moteur.Catalogue
 import io.github.jordanjacquot.mindcare.moteur.EnqueteTelephone
 import io.github.jordanjacquot.mindcare.moteur.Objet
 import io.github.jordanjacquot.mindcare.moteur.ProfilPc
-import io.github.jordanjacquot.mindcare.moteur.demandeSiCePc
 import io.github.jordanjacquot.mindcare.moteur.pistesEcartees
 import io.github.jordanjacquot.mindcare.moteur.titreReponse
 import io.github.jordanjacquot.mindcare.ui.theme.BarreHaut
@@ -65,7 +64,7 @@ fun EcranReparateur(
         barre = { BarreHaut("Pour le réparateur", retour = retour, profil = profil, ouvrirPc = ouvrirPc) },
         pied = {
             Bouton("Partager", {
-                val texte = catalogue.rapport(panne, e, titre, version, profil)
+                val texte = catalogue.rapport(panne, et, titre, version, profil)
                 contexte.startActivity(Intent.createChooser(
                     Intent(Intent.ACTION_SEND).setType("text/plain")
                         .putExtra(Intent.EXTRA_SUBJECT, "Mindcare : ${panne.texte("Titre")}").putExtra(Intent.EXTRA_TEXT, texte),
@@ -119,7 +118,9 @@ fun EcranReparateur(
             }
         }
 
-        val faits = e.faits.filter { !it.etape.demandeSiCePc() }
+        // (sans les réponses données toutes seules : « sur ce PC ? », et « portable ou fixe ? » quand « Ton PC » le dit,
+        // la ligne « PC choisi » le dit déjà)
+        val faits = et.faitsMontres.map { it.value }
         if (faits.isNotEmpty()) {
             TitreBloc("Les questions et tes réponses", Modifier.padding(top = 6.dp))
             Groupe(forme = RoundedCornerShape(16.dp)) {

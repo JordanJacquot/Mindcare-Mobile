@@ -60,8 +60,8 @@ Il faut Android Studio (son Java sert à Gradle : `JAVA_HOME=C:\Program Files\An
 Le code est dans `app/src/main/java/io/github/jordanjacquot/mindcare/` :
 
 - `moteur/` : le catalogue (`Catalogue`), l'enquête (`enquete`, portage exact de `Get-Enquete`) et la recherche
-  (`chercher`, portage de `Find-Pannes`), les groupes d'une famille (`groupes`, `groupesPour`) et le tri selon le PC
-  (`Pc.kt` : `ProfilPc`, `concerne`, `pannesPour`, `chercherPour`), portés du moteur Rust du PC ;
+  (`chercher`), les groupes d'une famille (`groupes`, `groupesPour`) et le tri selon le PC (`Pc.kt` : `ProfilPc`,
+  `concerne`, `pannesPour`, `chercherPour`), portés du moteur Rust du PC ;
 - `ui/theme/` : la DA de la suite (fond de nuit, verre, boutons, logo en pouls) et ses 5 thèmes, avec la même
   « traduction » des couleurs que sur PC ;
 - `ui/` : les écrans ;
